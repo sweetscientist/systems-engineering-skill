@@ -1,0 +1,9 @@
+{
+  "name": "systems-engineering",
+  "version": "0.1.0",
+  "description": "Systems-engineering workbench for Claude Code: requirements matrix, architecture (FFBD, N-squared), verification (VCRM), traceability, trade studies, FMEA/risk, and Mermaid diagrams on one shared requirements spine.",
+  "author": { "name": "sweetscientist" },
+  "repository": "https://github.com/sweetscientist/systems-engineering-skill",
+  "license": "MIT",
+  "keywords": ["systems-engineering", "requirements", "traceability", "ffbd", "vcrm", "fmea", "trade-study", "mbse"]
+}

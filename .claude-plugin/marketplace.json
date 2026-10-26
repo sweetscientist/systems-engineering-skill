@@ -1,0 +1,11 @@
+{
+  "name": "systems-engineering-skill",
+  "owner": { "name": "sweetscientist" },
+  "plugins": [
+    {
+      "name": "systems-engineering",
+      "source": "./",
+      "description": "Requirements, architecture, verification, traceability, trades, risk, and diagrams for Claude Code."
+    }
+  ]
+}
