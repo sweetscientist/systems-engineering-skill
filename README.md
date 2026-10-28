@@ -36,21 +36,162 @@ cp -R systems-engineering-skill/skills/systems-engineering ~/.claude/skills/
 
 Then invoke it as `/systems-engineering <mode> ...`. To scope it to a single project, copy it into `<project>/.claude/skills/` instead.
 
-## Usage
+ ## Usage
 
-```
-/systems-engineering architecture docs/conops.md
-/systems-engineering requirements "Regenerative braking system"
-/systems-engineering requirements audit specs/brake-srm.xlsx
-/systems-engineering verification
-/systems-engineering trace impact FUNC-002
-/systems-engineering trace coverage
-/systems-engineering trade "Select caliper housing material" aluminum titanium steel
-/systems-engineering risk fmea "Brake Caliper Assembly"
-/systems-engineering diagrams all
-```
+  The two features most people use are **building a requirements matrix** and **drawing diagrams from it**. Both work from a short brief, existing documents, or a
+  plain-language request. Commands that create files show a proposal first and write nothing until you approve it.
 
-A typical flow runs **architecture → requirements → verification → trace coverage → diagrams**, with **trade** and **risk** wherever a decision or a failure mode needs one. Each run ends by listing what it wrote, open gaps, candidate items for other modes, and the suggested next mode.
+  ### Build a requirements matrix
+
+  **Quick draft.** Point it at a system name or your source documents:
+
+  ```
+  /systems-engineering:design:requirements "Regenerative braking system"
+  /systems-engineering:design:requirements docs/brake-brief.md docs/brake-bom.xlsx
+  ```
+
+  Or just ask: *"Build a requirements matrix for our braking system from docs/brake-brief.md."*
+
+  What happens:
+
+  1. **It reads** your inputs and any existing `<system>-se/` workspace.
+  2. **It asks** only the questions that change the result: system boundary, depth (subsystem or part), and ID scheme. If your documents already use `REQ-###`, it
+  keeps that scheme.
+  3. **It proposes, then stops:**
+
+     ```
+     ## Requirements matrix proposal: Regenerative braking system
+
+     System boundary: pedal input to rotor clamping; driver and wheel/rotor are external
+     ID scheme: REQ-### (adopted from brake-brief.md)
+     Parents (SYS-level): SYS-M01 stop from 60 mph in under 3.0 s (brief §2)
+     Functional blocks / elements: F.1 Arrest Kinetic Energy, F.1.1, F.1.2 from brake-brief.md;
+                                   elements from brake-bom.xlsx
+     Key driving requirements: REQ-001 stopping time
+     Verification constraints: dynamometer available; no vehicle track time yet
+     Expected size: ~15 rows (8 functional, 7 physical)
+     Known gaps going in: pad wear life, operating temperature range
+     Output: regenerative-braking-system-se/requirements.csv, rationale.csv, measures.csv
+     ```
+
+  4. **After you approve,** it writes the matrix, validates it, and lists the gaps:
+
+  | Req ID | Parent ID | Requirement Text | Type | Functional Block | Allocated Element | Verification |
+  |---|---|---|---|---|---|---|
+  | REQ-001 | SYS-M01 | The system shall decelerate the vehicle from 60 mph to 0 mph in less than 3.0 seconds. | Functional | F.1: Arrest Kinetic Energy | Braking
+  Subsystem | Test |
+  | REQ-002 | REQ-001 | The system shall clamp the rotor with a force of at least 8,000 Newtons within 150 milliseconds of pedal actuation. | Functional | F.1.1:
+  Apply Clamping Force | Brake Caliper Assembly | Test |
+  | REQ-003 | REQ-002 | The caliper housing shall be constructed from aluminum alloy. | Physical | F.1.1: Apply Clamping Force | Brake Caliper Housing (Part 201) |
+  Inspection |
+  | REQ-004 | REQ-001 | The brake pads shall maintain a coefficient of friction ≥ 0.40 at operational temperatures up to 500 °C. | Physical | F.1.2: Generate
+  Friction | Friction Pads (Part 202) | Analysis |
+
+  ```
+  Gaps
+  - REQ-009 pad wear life: target TBD (brief gives none). Needs: supplier data or a customer goal.
+  - REQ-012 operating temperature range: TBD. Needs: the vehicle environment spec.
+  ```
+
+  Validation covers the framework rules, the NASA SEH six-step validation, and the Appendix C checklists: one `shall` per row, a measurable target or explicit `TBD`,
+  one verification method per row, and no function and physical constraint in the same sentence. It never invents a number. Unknown values stay `TBD` and appear
+  under Gaps.
+
+  **Fully traced matrix.** For more than a handful of functions, build the architecture first so every row gets a real block and element:
+
+  ```
+  /systems-engineering:design:requirements docs/brake-brief.md    # top-level rows from the brief
+  /systems-engineering:design:decomposition                        # F.X.X function tree (FFBD)
+  /systems-engineering:design:solution                             # physical element tree
+  /systems-engineering:design:requirements allocate                # fill blocks and elements, add child rows
+  ```
+
+  **Audit a matrix you already have.** This is read-only and changes nothing:
+  
+  ```
+  /systems-engineering:design:requirements audit specs/brake-srm.xlsx
+  ```
+
+  Illustrative findings:
+  
+  | Req ID | Check failed | Detail | Suggested fix |
+  |---|---|---|---|
+  | REQ-014 | Shall test | Two `shall`s in one row | Split into two rows; the new row continues the numbering |
+  | REQ-021 | Verifiable (App C) | "shall respond quickly" | State a response time with units, or `TBD` with an owner |
+  | REQ-030 | N-squared | One functional row allocated to both Caliper Assembly and ABS Module | Keep the functional row at Braking Subsystem; add one physical child
+  per element |
+
+  `requirements.csv` is always written. Ask for XLSX or Markdown if you need either.
+
+  ### Draw diagrams
+
+  Diagrams are rendered from the workspace as Mermaid. Every node is an artifact ID, so the diagrams never show structure that isn't in your data.
+
+  ```
+  /systems-engineering:model:diagrams all              # every diagram whose source exists
+  /systems-engineering:model:diagrams ffbd             # one view
+  /systems-engineering:model:diagrams trace REQ-001    # one requirement's full trace
+  ```
+
+  | View | Shows | Needs first |
+  |---|---|---|
+  | `context` | System boundary, external actors, boundary interfaces | design:solution, management:interfaces |
+  | `ffbd` | Function flow (FFBD) with sequence and AND/OR junctions | design:decomposition |
+  | `physical` | Element tree (PBS) | design:solution |
+  | `interfaces` | Element-to-element interfaces, labeled with IF IDs | management:interfaces |
+  | `trace <ID>` | Parents, children, verification, and risk links for one requirement | design:requirements |
+  | `ngo` | Stakeholders → needs → MOEs → system requirements | design:stakeholders, design:requirements |
+  | `stpa` / `fta <FT-###>` / `timeline` | Control structure, fault tree, review timeline | specialty:stpa, specialty:fta, management:planning |
+
+  If a source is missing, `all` skips that view and names the command that produces it.
+
+  Output goes to `<system>-se/diagrams.md`. GitHub renders Mermaid natively, so the file displays as diagrams in the repo. To edit one, paste the block into
+  [mermaid.live](https://mermaid.live). To export SVG or PNG, use [mermaid-cli](https://github.com/mermaid-js/mermaid-cli).
+
+  **Example: `ffbd`**
+
+  ```mermaid
+  flowchart LR
+    subgraph F1["F.1: Arrest Kinetic Energy"]
+      direction LR
+      F1_1["F.1.1: Apply Clamping Force"] --> F1_2["F.1.2: Generate Friction"]
+    end
+    IN([Pedal actuation]) --> F1_1
+    F1_2 --> OUT([Vehicle stopped])
+  ```
+
+  **Example: `physical`**
+
+  ```mermaid
+  flowchart TD
+    BS["Braking Subsystem"] --> BCA["Brake Caliper Assembly"]
+    BCA --> P201["Brake Caliper Housing (Part 201)"]
+    BCA --> P202["Friction Pads (Part 202)"]
+  ```
+
+  **Example: `trace REQ-001`**
+
+  ```mermaid
+  flowchart TD
+    SYS_M01["SYS-M01: Stop from 60 mph"] --> REQ_001["REQ-001: 60→0 mph in < 3.0 s"]
+    REQ_001 --> REQ_002["REQ-002: Clamp ≥ 8,000 N within 150 ms"]
+    REQ_001 --> REQ_004["REQ-004: Pad friction ≥ 0.40 to 500 °C"]
+    REQ_002 --> REQ_003["REQ-003: Housing is aluminum alloy"]
+    REQ_001 -. verified by .-> VER_001["VER-001: Vehicle stopping test"]
+    REQ_002 -. verified by .-> VER_002["VER-002: Clamp force dyno test"]
+  ```
+
+  ### Other workflows
+  
+  | Task | Command |
+  |---|---|
+  | What breaks if I change a requirement? | `/systems-engineering:management:requirements impact REQ-002` |
+  | Find traceability gaps across everything | `/systems-engineering:management:requirements coverage` |
+  | Verification matrix (VCRM) from the requirements | `/systems-engineering:realization:verification` |
+  | Trade study | `/systems-engineering:management:decision "Select caliper housing material" aluminum titanium steel` |
+  | FMEA on an assembly | `/systems-engineering:specialty:fmea "Brake Caliper Assembly"` |
+  | Is the project ready for PDR? | `/systems-engineering:lifecycle:reviews PDR` |
+  | Stakeholders and ConOps from a mission brief | `/systems-engineering:design:stakeholders brief.md`, then `design:conops` |
 
 ## Shared workspace
 
