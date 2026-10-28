@@ -76,16 +76,39 @@ Then invoke it as `/systems-engineering <mode> ...`. To scope it to a single pro
 
   4. **After you approve,** it writes the matrix, validates it, and lists the gaps:
 
-  | Req ID | Parent ID | Requirement Text | Type | Functional Block | Allocated Element | Verification |
+| Req ID | Parent ID | Requirement Text | Requirement Type | Functional Block (What) |
+  Allocated Element (Where/How) | Verification Method |
   |---|---|---|---|---|---|---|
-  | REQ-001 | SYS-M01 | The system shall decelerate the vehicle from 60 mph to 0 mph in less than 3.0 seconds. | Functional | F.1: Arrest Kinetic Energy | Braking
-  Subsystem | Test |
-  | REQ-002 | REQ-001 | The system shall clamp the rotor with a force of at least 8,000 Newtons within 150 milliseconds of pedal actuation. | Functional | F.1.1:
-  Apply Clamping Force | Brake Caliper Assembly | Test |
-  | REQ-003 | REQ-002 | The caliper housing shall be constructed from aluminum alloy. | Physical | F.1.1: Apply Clamping Force | Brake Caliper Housing (Part 201) |
+  | REQ-001 | SYS-M01 | The system shall decelerate the vehicle from 60 mph to 0 mph in
+  less than 3.0 seconds on dry pavement. | Functional | F.1: Arrest Kinetic Energy |
+  Braking Subsystem | Test |
+  | REQ-002 | REQ-001 | The brake caliper assembly shall clamp the rotor with a force of at
+  least 8,000 N within 150 ms of pedal actuation. | Functional | F.1.1: Apply Clamping
+  Force | Brake Caliper Assembly | Test |
+  | REQ-003 | REQ-002 | The caliper housing shall be constructed from 6061-T6 aluminum
+  alloy. | Physical | F.1.1: Apply Clamping Force | Brake Caliper Housing (Part 201) |
   Inspection |
-  | REQ-004 | REQ-001 | The brake pads shall maintain a coefficient of friction ≥ 0.40 at operational temperatures up to 500 °C. | Physical | F.1.2: Generate
-  Friction | Friction Pads (Part 202) | Analysis |
+  | REQ-004 | REQ-002 | The caliper housing shall have a mass of no more than 2.5 kg. |
+  Physical | F.1.1: Apply Clamping Force | Brake Caliper Housing (Part 201) | Test |
+  | REQ-005 | REQ-001 | The friction pads shall generate a braking torque of at least 1,200
+  N·m per front wheel at 8,000 N clamp force. | Functional | F.1.2: Generate Friction |
+  Friction Pads (Part 202) | Test |
+  | REQ-006 | REQ-005 | The friction pads shall maintain a coefficient of friction of at
+  least 0.40 at operating temperatures up to 500 °C. | Physical | F.1.2: Generate Friction
+  | Friction Pads (Part 202) | Analysis |
+  | REQ-007 | SYS-M02 | The motor-generator unit shall convert at least 60 % of vehicle
+  kinetic energy to battery charge during a 0.2 g deceleration from 30 mph to 0 mph. |
+  Functional | F.2: Recover Kinetic Energy | Motor-Generator Unit (Part 310) | Test |
+  | REQ-008 | REQ-007 | The motor-generator unit shall deliver charging current to the
+  battery pack interface at no more than 400 V DC. | Physical | F.2: Recover Kinetic Energy
+  | Motor-Generator Unit (Part 310) | Test |
+  | REQ-009 | REQ-001 | The brake controller shall blend regenerative and friction braking
+  so that total deceleration deviates from driver demand by no more than 0.05 g. |
+  Functional | F.3: Blend Braking Torque | Brake Controller (SW CI BC-01) | Test |
+  | REQ-010 | SYS-M03 | The brake controller shall display a "Regen Braking Unavailable"
+  message on the instrument cluster whenever regenerative braking is inhibited. |
+  Functional | F.4: Annunciate Braking Status | Brake Controller (SW CI BC-01) |
+  Demonstration |
 
   ```
   Gaps
